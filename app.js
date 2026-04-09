@@ -182,7 +182,15 @@ function App(){
   phases.forEach(ph=>ph.sessions.forEach((s,si)=>{
     const key=ph.id+"-"+si;
     const rec=records[key]||{};
-    if(rec.km){const m=s.month;monthlyKm[m]=(monthlyKm[m]||0)+parseFloat(rec.km||0);}
+    if(rec.km){
+      // 日付が入力されていればその月、なければセッションの月を使う
+      let m=s.month;
+      if(rec.date){
+        const parts=rec.date.split("-");
+        if(parts.length===3){const mo=parseInt(parts[1],10);m=mo+"月";}
+      }
+      monthlyKm[m]=(monthlyKm[m]||0)+parseFloat(rec.km||0);
+    }
   }));
   const totalKm=Object.values(monthlyKm).reduce((a,v)=>a+v,0);
 
@@ -400,10 +408,13 @@ function App(){
               const km=monthlyKm[month]||0;
               const sessions=[];
               phases.forEach(ph=>ph.sessions.forEach((s,si)=>{
-                if(s.month===month){
-                  const key=ph.id+"-"+si;
-                  const rec=records[key]||{};
-                  if(rec.km)sessions.push({week:s.week,km:parseFloat(rec.km),pace:rec.pace,date:rec.date});
+                const key=ph.id+"-"+si;
+                const rec=records[key]||{};
+                if(rec.km){
+                  // 日付があればその月、なければセッションの月で判定
+                  let m=s.month;
+                  if(rec.date){const parts=rec.date.split("-");if(parts.length===3){const mo=parseInt(parts[1],10);m=mo+"月";}}
+                  if(m===month)sessions.push({week:s.week,km:parseFloat(rec.km),pace:rec.pace,date:rec.date});
                 }
               }));
               const maxKm=Math.max(...MONTHS.map(m=>monthlyKm[m]||0),1);
